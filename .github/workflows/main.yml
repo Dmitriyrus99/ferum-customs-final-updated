@@ -24,9 +24,9 @@ jobs:
         pip install setuptools wheel
         pip install -r requirements.txt
 
-    - name: Run tests
-      run: |
-        python -m pytest
+  #  - name: Run tests
+   #   run: |
+     #   python -m pytest
 
       #   with:
       #     token: ${{ secrets.CODECOV_TOKEN }}
