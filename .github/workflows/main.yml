@@ -1,35 +1,167 @@
-name: Run Tests
+name: CI for Ferum Customs
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main # или develop, master, в зависимости от вашей основной ветки
+      - version-15 # Если вы работаете с конкретной версией Frappe/ERPNext
   pull_request:
-
-permissions:
-  contents: read
+    branches:
+      - main # или develop, master
+      - version-15
 
 jobs:
-  test:
+  lint:
+    name: Lint Code
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # Укажите версию Python, соответствующую вашему проекту
+
+      - name: Install dependencies for linting
+        run: |
+          python -m pip install --upgrade pip
+          # Установка линтеров и зависимостей, необходимых для их работы
+          # requirements.txt содержит ruff и flake8
+          pip install ruff flake8
+          # Если для работы линтеров нужны еще какие-то пакеты из requirements.txt,
+          # можно установить весь файл, но это может быть избыточно для линтинга.
+          # pip install -r requirements.txt
+
+      - name: Run Ruff
+        run: ruff check . --output-format=github
+
+      - name: Run Flake8
+        run: flake8 .
+
+  run-tests:
+    name: Run Frappe Tests
+    needs: lint # Запускать после успешного линтинга
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10'] # Можно указать несколько версий Python для тестирования
+        # mariadb-version: ['10.6'] # Можно добавить матрицу для версий БД
+
+    services: # Запускаем MariaDB в сервис-контейнере для тестов
+      mariadb:
+        image: mariadb:10.6 # Используйте версию MariaDB, совместимую с вашей версией Frappe
+        env:
+          MYSQL_ROOT_PASSWORD: root_password # Пароль для root
+          MYSQL_DATABASE: test_db # Имя тестовой базы данных
+          MYSQL_USER: test_user # Пользователь для тестовой базы данных
+          MYSQL_PASSWORD: test_password # Пароль для пользователя тестовой базы данных
+        ports:
+          - 3306:3306 # Пробрасываем порт для доступа из основного контейнера
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -P 3306 -u root -proot_password"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis-cache:
+        image: redis:6.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis-queue:
+        image: redis:6.2-alpine
+        ports:
+          - 6380:6379 # Другой порт для очереди, если нужен отдельный инстанс
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: ${{ github.workspace }}/apps/ferum_customs # Клонируем приложение в папку apps/ferum_customs
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel
-        pip install -r requirements.txt
+      - name: Install OS dependencies for Frappe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmysqlclient-dev wkhtmltopdf xvfb libfontconfig # Основные зависимости
+          # Дополнительные зависимости могут потребоваться в зависимости от вашего приложения
 
-  #  - name: Run tests
-   #   run: |
-     #   python -m pytest
+      - name: Install Frappe Bench
+        run: |
+          python -m pip install --upgrade pip
+          pip install frappe-bench
+          bench --version
 
+      - name: Initialize Frappe Bench
+        run: |
+          bench init --frappe-branch version-15 frappe-bench # Укажите актуальную ветку Frappe
+          cd frappe-bench
+          # Настройка bench для использования внешних сервисов (MariaDB, Redis)
+          bench set-mariadb-host mariadb # Имя сервиса MariaDB
+          bench set-redis-cache redis-cache:6379 # Имя сервиса Redis Cache
+          bench set-redis-queue redis-queue:6380 # Имя сервиса Redis Queue
+          # Можно также настроить common_site_config.json напрямую
+
+      - name: Get ferum_customs app
+        run: |
+          cd frappe-bench
+          # Вместо get-app, так как мы уже склонировали код в apps/ferum_customs
+          # bench get-app ${{ github.workspace }}/apps/ferum_customs
+          # просто указываем, что приложение уже там
+          echo "ferum_customs app is already in ${{ github.workspace }}/apps/ferum_customs, bench should pick it up."
+          # Или можно сделать символическую ссылку, если bench init не создает ее автоматически
+          # ln -s ${{ github.workspace }}/apps/ferum_customs apps/ferum_customs
+
+
+      - name: Create new site
+        run: |
+          cd frappe-bench
+          # Создаем сайт, используя учетные данные для MariaDB, настроенные в сервисе
+          bench new-site test_site.localhost \
+            --db-name test_db \
+            --mariadb-root-username root \
+            --mariadb-root-password root_password \
+            --admin-password admin \
+            --force
+          bench use test_site.localhost
+
+      - name: Install ferum_customs on site
+        run: |
+          cd frappe-bench
+          bench --site test_site.localhost install-app ferum_customs
+          # Установка зависимостей Python для вашего приложения, если они не были установлены ранее
+          # pip install -r apps/ferum_customs/requirements.txt
+          # requirements.txt уже должен быть установлен, если они были частью get-app
+
+      - name: Run tests for ferum_customs
+        run: |
+          cd frappe-bench
+          # Запускаем тесты для конкретного приложения
+          # pytest --app ferum_customs apps/ferum_customs/tests
+          # или стандартная команда bench для запуска тестов
+          bench --site test_site.localhost run-tests --app ferum_customs --coverage
+          # Пример для запуска конкретного файла теста:
+          # bench --site test_site.localhost run-tests --module "ferum_customs.tests.test_basic"
+
+      # Опционально: Загрузка отчета о покрытии кода
+      # - name: Upload coverage reports to Codecov
+      #   uses: codecov/codecov-action@v3
       #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     token: ${{ secrets.CODECOV_TOKEN }} # Если используете Codecov
+      #     fail_ci_if_error: true
