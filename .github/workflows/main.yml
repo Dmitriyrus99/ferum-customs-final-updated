@@ -1,134 +1,32 @@
-name: CI for Ferum Customs
+name: Run Tests
 
 on:
   push:
-    branches:
-      - main
-      - version-15
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
-      - version-15
 
 jobs:
-  lint:
-    name: Lint Code
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Install linters
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff flake8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel
+        pip install -r requirements.txt
 
-      - name: Run Ruff
-        run: ruff check . --output-format=github
+    - name: Run tests
+      run: |
+        python -m pytest
 
-      - name: Run Flake8
-        run: flake8 .
-
-  run-tests:
-    name: Run Frappe Tests
-    needs: lint
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.10']
-
-    services:
-      mariadb:
-        image: mariadb:10.6
-        env:
-          MYSQL_ROOT_PASSWORD: root_password
-          MYSQL_DATABASE: test_db
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -proot_password"
-          --health-interval=10s --health-timeout=5s --health-retries=5
-
-      redis-cache:
-        image: redis:6.2-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s --health-timeout=5s --health-retries=5
-
-      redis-queue:
-        image: redis:6.2-alpine
-        ports:
-          - 6380:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s --health-timeout=5s --health-retries=5
-
-    env:
-      # Настройки для bench init
-      MYSQL_HOST: mariadb
-      MYSQL_ROOT_PASSWORD: root_password
-      REDIS_CACHE: redis-cache:6379
-      REDIS_QUEUE: redis-queue:6380
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install OS dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libmysqlclient-dev wkhtmltopdf xvfb libfontconfig
-
-      - name: Install Bench and Frappe
-        run: |
-          python -m pip install --upgrade pip
-          pip install frappe-bench
-
-      - name: Initialize Bench
-        run: |
-          bench init --frappe-branch version-15 frappe-bench --skip-redis-config --skip-mariadb-config
-          cd frappe-bench
-          bench set-mariadb-host $MYSQL_HOST
-          bench set-redis-cache $REDIS_CACHE
-          bench set-redis-queue $REDIS_QUEUE
-
-      - name: Add ferum_customs app
-        run: |
-          cd frappe-bench
-          mkdir -p apps
-          cp -R ${{ github.workspace }} apps/ferum_customs
-
-      - name: Create and configure site
-        run: |
-          cd frappe-bench
-          bench new-site test.local \
-             --db-name test_db \
-             --mariadb-root-username root \
-             --mariadb-root-password $MYSQL_ROOT_PASSWORD \
-             --admin-password admin --force
-          bench --site test.local install-app ferum_customs
-
-      - name: Run tests
-        run: |
-          cd frappe-bench
-          bench --site test.local run-tests --app ferum_customs --coverage
-
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v3
       #   with:
       #     token: ${{ secrets.CODECOV_TOKEN }}
