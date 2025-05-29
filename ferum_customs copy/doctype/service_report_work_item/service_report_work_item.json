@@ -1,0 +1,12 @@
+{
+    "doctype": "DocType",
+    "name": "ServiceReportWorkItem",
+    "module": "Ferum Customs",
+    "istable": 1,
+    "fields": [
+        {"fieldname": "description", "label": "Description", "fieldtype": "Text", "reqd": 1},
+        {"fieldname": "quantity", "label": "Quantity", "fieldtype": "Float"},
+        {"fieldname": "unit_price", "label": "Unit Price", "fieldtype": "Currency"},
+        {"fieldname": "amount", "label": "Amount", "fieldtype": "Currency", "read_only": 1}
+    ]
+}

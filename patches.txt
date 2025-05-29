@@ -1,0 +1,4 @@
+[pre_model_sync]
+ferum_customs.patches.v1_0.rename_project_to_service_project
+[post_model_sync]
+ferum_customs.patches.v1_0.create_custom_roles_and_permissions

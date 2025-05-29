@@ -1,0 +1,20 @@
+{
+  "doctype": "Workflow",
+  "is_active": 1,
+  "workflow_name": "ServiceRequest Flow",
+  "document_type": "ServiceRequest",
+  "workflow_state_field": "status",
+  "states": [
+    {"state": "Открыта",    "doc_status": 0, "allow_edit": "Project Manager"},
+    {"state": "В работе",   "doc_status": 0, "allow_edit": "Engineer"},
+    {"state": "Выполнена",  "doc_status": 0, "allow_edit": "Project Manager"},
+    {"state": "Закрыта",    "doc_status": 1, "allow_edit": "Project Manager"},
+    {"state": "Отменена",   "doc_status": 2, "allow_edit": "Project Manager"}
+  ],
+  "transitions": [
+    {"state": "Открыта",   "action": "Назначить", "next_state": "В работе",  "allowed": "Project Manager"},
+    {"state": "В работе",  "action": "Завершить", "next_state": "Выполнена", "allowed": "Engineer"},
+    {"state": "Выполнена", "action": "Закрыть",   "next_state": "Закрыта",   "allowed": "Project Manager"},
+    {"state": "Открыта",   "action": "Отменить",  "next_state": "Отменена",  "allowed": "Project Manager"}
+  ]
+}

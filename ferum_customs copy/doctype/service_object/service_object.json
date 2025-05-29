@@ -1,0 +1,9 @@
+{
+    "doctype": "DocType",
+    "name": "ServiceObject",
+    "module": "Ferum Customs",
+    "fields": [
+        {"fieldname": "linked_service_project", "label": "Linked Service Project", "fieldtype": "Link", "options": "ServiceProject"},
+        {"fieldname": "assigned_engineers", "label": "Assigned Engineers", "fieldtype": "Table", "options": "AssignedEngineerItem"}
+    ]
+}

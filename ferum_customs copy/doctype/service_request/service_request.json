@@ -1,0 +1,12 @@
+{
+    "doctype": "DocType",
+    "name": "ServiceRequest",
+    "module": "Ferum Customs",
+    "fields": [
+        {"fieldname": "project", "label": "Project", "fieldtype": "Link", "options": "ServiceProject"},
+        {"fieldname": "customer", "label": "Customer", "fieldtype": "Link", "options": "Customer"},
+        {"fieldname": "linked_report", "label": "Linked Report", "fieldtype": "Link", "options": "ServiceReport", "read_only": 1},
+        {"fieldname": "status", "label": "Status", "fieldtype": "Select", "options": "Открыта\nВ работе\nВыполнена\nЗакрыта\nОтменена"},
+        {"fieldname": "service_object_link", "label": "Service Object", "fieldtype": "Link", "options": "ServiceObject"}
+    ]
+}

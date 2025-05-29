@@ -1,0 +1,12 @@
+[
+    {
+        "doctype": "Custom DocPerm",
+        "parent": "ServiceProject",
+        "role": "Проектный менеджер",
+        "permlevel": 0,
+        "read": 1,
+        "write": 1,
+        "create": 1,
+        "delete": 1
+    }
+]

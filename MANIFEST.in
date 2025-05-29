@@ -1,0 +1,2 @@
+include MANIFEST.in
+recursive-include ferum_customs *.py *.json *.js *.html *.css *.md *.txt *.csv

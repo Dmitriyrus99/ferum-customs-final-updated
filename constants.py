@@ -1,0 +1,6 @@
+"""Constants for ferum_customs application."""
+STATUS_OPEN = "Open"
+STATUS_CLOSED = "Closed"
+STATUS_PENDING = "Pending"
+ROLE_ADMIN = "Administrator"
+ROLE_ENGINEER = "Engineer"

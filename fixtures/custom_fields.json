@@ -1,0 +1,11 @@
+[
+    {
+        "doctype": "Custom Field",
+        "dt": "ServiceRequest",
+        "fieldname": "linked_report",
+        "label": "Linked Report",
+        "fieldtype": "Link",
+        "options": "ServiceReport",
+        "read_only": 1
+    }
+]

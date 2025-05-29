@@ -1,0 +1,12 @@
+{
+    "doctype": "DocType",
+    "name": "CustomAttachment",
+    "module": "Ferum Customs",
+    "fields": [
+        {"fieldname": "attachment_type", "label": "Attachment Type", "fieldtype": "Select", "options": "Фото\nДокумент"},
+        {"fieldname": "parent_reference_sr", "label": "Parent Service Request", "fieldtype": "Link", "options": "ServiceRequest"},
+        {"fieldname": "parent_reference_srep", "label": "Parent Service Report", "fieldtype": "Link", "options": "ServiceReport"},
+        {"fieldname": "parent_reference_so", "label": "Parent Service Object", "fieldtype": "Link", "options": "ServiceObject"},
+        {"fieldname": "attachment_file", "label": "Attachment File", "fieldtype": "Attach"}
+    ]
+}

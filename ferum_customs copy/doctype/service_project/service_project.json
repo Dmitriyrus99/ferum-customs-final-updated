@@ -1,0 +1,13 @@
+{
+    "doctype": "DocType",
+    "name": "ServiceProject",
+    "module": "Ferum Customs",
+    "fields": [
+        {
+            "fieldname": "project_object_items",
+            "label": "Project Object Items",
+            "fieldtype": "Table",
+            "options": "ProjectObjectItem"
+        }
+    ]
+}

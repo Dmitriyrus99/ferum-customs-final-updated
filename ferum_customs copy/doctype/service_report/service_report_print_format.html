@@ -1,0 +1,22 @@
+<h2>Акт выполненных работ</h2>
+<p>Номер отчета: {{ doc.name }}</p>
+<p>Дата: {{ frappe.utils.formatdate(doc.posting_date) }}</p>
+<p>Клиент: {{ frappe.get_doc('Customer', doc.customer).customer_name }}</p>
+<p>Проект: {{ doc.service_request }}</p>
+
+<table>
+    <tr>
+        <th>#</th><th>Описание</th><th>Кол-во</th><th>Цена</th><th>Сумма</th>
+    </tr>
+    {% for item in doc.work_items %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ item.description }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.unit_price }}</td>
+        <td>{{ item.amount }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<p>Итого к оплате: {{ doc.total_payable }} ({{ frappe.utils.money_in_words(doc.total_payable) }})</p>

@@ -1,0 +1,8 @@
+{
+    "doctype": "DocType",
+    "name": "PayrollEntryCustom",
+    "module": "Ferum Customs",
+    "fields": [
+        {"fieldname": "total_payable", "label": "Total Payable", "fieldtype": "Currency", "read_only": 1}
+    ]
+}
