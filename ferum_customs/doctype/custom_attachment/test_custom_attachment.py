@@ -1,3 +1,4 @@
+import pytest; pytest.importorskip("frappe")  # noqa: E402,F401
 import frappe
 import unittest
 
