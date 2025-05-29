@@ -1,0 +1,11 @@
+{
+    "doctype": "DocType",
+    "name": "ServiceReport",
+    "module": "Ferum Customs",
+    "fields": [
+        {"fieldname": "service_request", "label": "Service Request", "fieldtype": "Link", "options": "ServiceRequest"},
+        {"fieldname": "total_payable", "label": "Total Payable", "fieldtype": "Currency", "read_only": 1},
+        {"fieldname": "work_items", "label": "Work Items", "fieldtype": "Table", "options": "ServiceReportWorkItem"},
+        {"fieldname": "attached_documents", "label": "Attached Documents", "fieldtype": "Table", "options": "ServiceReportDocumentItem"}
+    ]
+}
