@@ -1,0 +1,271 @@
+{
+    "doctype": "DocType",
+    "name": "service_request",
+    "module": "Ferum Customs",
+    "engine": "InnoDB",
+    "issingle": 0,
+    "is_submittable": 1,
+    "show_name_in_global_search": 1,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "track_changes": 1,
+    "track_seen": 1,
+    "track_views": 1,
+    "allow_rename": 1,
+    "naming_series": "SR-.YYYY.-.#####",
+    "title_field": "subject",
+    "workflow_name": "Service Request Workflow",
+    "fields": [
+        {
+            "fieldname": "sb_main_info",
+            "fieldtype": "Section Break",
+            "label": "Основная информация"
+        },
+        {
+            "fieldname": "subject",
+            "label": "Тема заявки",
+            "fieldtype": "Data",
+            "reqd": 1,
+            "in_list_view": 1,
+            "description": "Краткое описание или название заявки (например, 'Ремонт принтера X в офисе Y')"
+        },
+        {
+            "fieldname": "customer",
+            "label": "Клиент",
+            "fieldtype": "Link",
+            "options": "Customer",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "company",
+            "label": "Компания",
+            "fieldtype": "Link",
+            "options": "Company",
+            "default": "eval:frappe.defaults.get_user_default('company')",
+            "reqd": 1
+        },
+        {
+            "fieldname": "request_datetime",
+            "label": "Дата и время заявки",
+            "fieldtype": "Datetime",
+            "default": "Now",
+            "read_only": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "request_type",
+            "label": "Тип заявки",
+            "fieldtype": "Select",
+            "options": "\nГарантийное обслуживание\nПлановое ТО\nРемонт\nАварийный выезд\nКонсультация\nДругое",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "priority",
+            "label": "Приоритет",
+            "fieldtype": "Select",
+            "options": "\nНизкий\nСредний\nВысокий\nКритический",
+            "default": "Средний",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "workflow_state_display",
+            "label": "Статус",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "no_copy": 1,
+            "in_list_view": 1,
+            "fetch_from": "workflow_state",
+            "description": "Текущий статус заявки, определяется рабочим процессом."
+        },
+        {
+            "fieldname": "cb_main_details",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "service_object",
+            "label": "Объект обслуживания",
+            "fieldtype": "Link",
+            "options": "service_object",
+            "description": "Выберите объект, к которому относится заявка (если применимо)"
+        },
+        {
+            "fieldname": "project",
+            "label": "Проект",
+            "fieldtype": "Link",
+            "options": "service_project",
+            "description": "Если заявка является частью более крупного проекта"
+        },
+        {
+            "fieldname": "contact_person",
+            "label": "Контактное лицо",
+            "fieldtype": "Link",
+            "options": "Contact",
+            "description": "Контактное лицо со стороны клиента"
+        },
+        {
+            "fieldname": "contact_phone",
+            "label": "Телефон контакта",
+            "fieldtype": "Data",
+            "options": "Phone",
+            "fetch_from": "contact_person.mobile_no",
+            "depends_on": "contact_person"
+        },
+        {
+            "fieldname": "contact_email",
+            "label": "Email контакта",
+            "fieldtype": "Data",
+            "options": "Email",
+            "fetch_from": "contact_person.email_id",
+            "depends_on": "contact_person"
+        },
+        {
+            "fieldname": "address_display",
+            "label": "Адрес обслуживания",
+            "fieldtype": "Small Text",
+            "read_only": 1,
+            "description": "Адрес, по которому будет производиться обслуживание. Может заполняться из Клиента или Объекта обслуживания."
+        },
+        {
+            "fieldname": "request_code",
+            "label": "Код заявки (доп.)",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "no_copy": 1,
+            "description": "Дополнительный генерируемый код заявки, если требуется."
+        },
+        {
+            "fieldname": "sb_description",
+            "fieldtype": "Section Break",
+            "label": "Описание проблемы и детали"
+        },
+        {
+            "fieldname": "problem_description",
+            "label": "Подробное описание проблемы",
+            "fieldtype": "TextEditor",
+            "reqd": 1
+        },
+        {
+            "fieldname": "resolution_details",
+            "label": "Описание решения",
+            "fieldtype": "Text Editor",
+            "depends_on": "eval:doc.workflow_state == 'Выполнена' || doc.workflow_state == 'Закрыта'",
+            "read_only_depends_on": "eval:doc.workflow_state == 'Закрыта'"
+        },
+        {
+            "fieldname": "completed_on",
+            "label": "Дата выполнения",
+            "fieldtype": "Datetime",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "sb_assignment",
+            "fieldtype": "Section Break",
+            "label": "Назначение и выполнение"
+        },
+        {
+            "fieldname": "assigned_engineer_user",
+            "label": "Назначенный инженер",
+            "fieldtype": "Link",
+            "options": "User",
+            "description": "Пользователь, ответственный за выполнение заявки",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "engineer_name",
+            "label": "Имя инженера",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "fetch_from": "assigned_engineer_user.full_name",
+            "no_copy": 1
+        },
+        {
+            "fieldname": "planned_start_datetime",
+            "label": "План. начало работ",
+            "fieldtype": "Datetime"
+        },
+        {
+            "fieldname": "planned_end_datetime",
+            "label": "План. окончание работ",
+            "fieldtype": "Datetime"
+        },
+        {
+            "fieldname": "cb_assignment_actuals",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "actual_start_datetime",
+            "label": "Факт. начало работ",
+            "fieldtype": "Datetime",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "actual_end_datetime",
+            "label": "Факт. окончание работ",
+            "fieldtype": "Datetime",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "duration_hours",
+            "label": "Длительность (часы)",
+            "fieldtype": "Duration",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "linked_report",
+            "label": "Связанный отчет",
+            "fieldtype": "Link",
+            "options": "service_report",
+            "read_only": 1,
+            "no_copy": 1,
+            "description": "Ссылка на основной сервисный отчет, связанный с этой заявкой."
+        },
+        {
+            "fieldname": "sb_attachments_and_notes",
+            "fieldtype": "Section Break",
+            "label": "Вложения и заметки"
+        },
+        {
+            "fieldname": "notes",
+            "label": "Дополнительные заметки",
+            "fieldtype": "TextEditor"
+        }
+    ],
+    "permissions": [
+        {
+            "role": "System Manager",
+            "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "share": 1, "export": 1, "import": 1, "report":1, "print":1, "email":1
+        },
+        {
+            "role": "Проектный менеджер",
+            "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "share": 1, "export": 1, "report":1, "print":1, "email":1
+        },
+        {
+            "role": "Инженер",
+            "read": 1, "write": 1, "create": 1, "delete": 0, "submit": 0, "cancel": 0, "amend": 0, "share": 1, "report":1, "print":1, "email":1
+        },
+        {
+            "role": "Офис-менеджер",
+            "read": 1, "write": 1, "create": 1, "delete": 0, "submit": 0, "cancel": 0, "amend": 0, "share": 1, "report":1, "print":1, "email":1
+        }
+    ],
+    "links": [
+        {
+            "link_doctype": "service_report",
+            "link_fieldname": "service_request"
+        },
+        {
+            "link_doctype": "custom_attachment",
+            "link_fieldname": "parent_reference_sr",
+            "group": "Вложения (Custom)",
+            "add_count_to_dashboard": 1
+        }
+    ],
+    "icon": "uil uil-wrench",
+    "index_web_pages_for_search": 0
+}

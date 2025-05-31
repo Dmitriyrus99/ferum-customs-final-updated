@@ -1,0 +1,30 @@
+# In ferum_customs/utils.py
+import frappe
+
+@frappe.whitelist()
+def get_engineers_for_service_object(service_object_name):
+    """
+    Utility function to get engineers assigned to a service object.
+    Similar to get_engineers_for_object in service_request_hooks.
+    """
+    if not service_object_name:
+        frappe.throw("Service Object name cannot be empty.")
+        return []
+
+    if not frappe.db.exists("ServiceObject", service_object_name):
+        frappe.msgprint(f"Service Object {service_object_name} not found.")
+        return []
+
+    try:
+        service_object_doc = frappe.get_doc("ServiceObject", service_object_name)
+        engineers = [item.engineer for item in service_object_doc.get("assigned_engineers") if item.engineer]
+        return engineers
+    except Exception as e:
+        frappe.log_error(f"Error fetching engineers for {service_object_name}: {e}", "Utils Get Engineers")
+        return []
+
+# In ferum_customs/hooks.py, add to whitelisted_methods:
+# whitelisted_methods = [
+#     ...other_methods,
+#     "ferum_customs.utils.get_engineers_for_service_object"
+# ]

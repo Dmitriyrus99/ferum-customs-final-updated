@@ -1,0 +1,147 @@
+# ferum_customs/custom_logic/service_request_hooks.py
+"""Хуки для DocType *service_request*."""
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+import frappe
+from frappe import _
+from frappe.utils import now
+
+from ..constants import (
+    STATUS_VYPOLNENA,
+    STATUS_ZAKRYTA,
+    ROLE_PROEKTNYJ_MENEDZHER,
+)
+
+if TYPE_CHECKING:
+    from ..ferum_customs.doctype.service_request.service_request import service_request
+
+
+# --------------------------------------------------------------------------- #
+#                                 Doc Events                                  #
+# --------------------------------------------------------------------------- #
+
+def validate(doc: "service_request", method: str | None = None) -> None:
+    """
+    Вызывается Frappe перед сохранением `service_request`.
+    Проверяем бизнес-правила.
+    """
+    if doc.status == STATUS_VYPOLNENA and not doc.linked_report: # Changed from doc.service_report to doc.linked_report to match fieldname in JSON
+        frappe.throw(_("Нельзя отметить заявку выполненной без отчёта (Service Report)."))
+
+    # Ensure 'completed_on' is a field in your service_request DocType JSON
+    if doc.status == STATUS_VYPOLNENA and not doc.get("completed_on") and "completed_on" in doc.meta.fields:
+        doc.completed_on = now()
+    
+    # Add other validations as needed
+    # e.g., ensure customer is set if project is set
+    if doc.project and not doc.customer:
+        customer = frappe.db.get_value("ServiceProject", doc.project, "customer") # Assuming ServiceProject has a customer link
+        if customer:
+            doc.customer = customer
+        # else:
+            # frappe.throw(_("Customer must be set for the selected project or Service Request."))
+
+
+def on_update_after_submit(doc: "service_request", method: str | None = None) -> None:
+    """
+    После изменения отправленного (submitted) документа.
+    Если заявка закрыта, отправляем уведомление менеджеру проекта.
+    """
+    if doc.status == STATUS_ZAKRYTA:
+        _notify_project_manager(doc)
+
+def prevent_deletion_with_links(doc: "service_request", method: str | None = None) -> None:
+    """
+    Предотвращает удаление service_request, если на него есть ссылки
+    из ServiceReport или других важных документов.
+    """
+    # Example: Check if there are linked Service Reports
+    if doc.name: # Ensure doc.name exists
+        linked_reports = frappe.db.exists("ServiceReport", {"service_request": doc.name})
+        if linked_reports:
+            frappe.throw(
+                _("Нельзя удалить заявку {0}, так как на нее ссылаются отчеты о выполненных работах.").format(doc.name)
+            )
+    # Add checks for other links if necessary
+
+
+# --------------------------------------------------------------------------- #
+#                                 Whitelisted Methods                         #
+# --------------------------------------------------------------------------- #
+
+@frappe.whitelist()
+def get_engineers_for_object(service_object: str) -> list[str]:
+    """
+    Возвращает список инженеров, назначенных на указанный объект обслуживания (ServiceObject).
+    Вызывается из клиентского скрипта.
+
+    Args:
+        service_object: Имя (ID) объекта обслуживания (ServiceObject).
+
+    Returns:
+        Список имен (User ID) инженеров.
+    """
+    if not service_object:
+        return []
+
+    # Assuming ServiceObject has a child table 'assigned_engineers' (e.g., fieldname 'assigned_engineers')
+    # and this child table 'AssignedEngineerItem' has a Link field 'engineer' to User doctype.
+    # Adjust field names as per your ServiceObject and AssignedEngineerItem DocType definitions.
+    
+    service_object_doc = frappe.get_doc("ServiceObject", service_object)
+    engineers = []
+    if hasattr(service_object_doc, "assigned_engineers"):
+        for entry in service_object_doc.get("assigned_engineers"):
+            if entry.engineer: # 'engineer' is the fieldname in AssignedEngineerItem linking to User
+                engineers.append(entry.engineer)
+    
+    if not engineers:
+        # Fallback or alternative logic if no engineers directly assigned to the object
+        # Maybe get engineers associated with the project linked to the service object?
+        # project = service_object_doc.get("linked_service_project")
+        # if project:
+        #   project_engineers = get_engineers_for_project(project) # You'd need to define this
+        #   engineers.extend(project_engineers)
+        pass
+
+    return list(set(engineers)) # Return unique list
+
+
+# --------------------------------------------------------------------------- #
+#                                 Вспомогательное                             #
+# --------------------------------------------------------------------------- #
+
+def _notify_project_manager(doc: "service_request") -> None:
+    """Отправить уведомление «Проектному менеджеру», что заявка закрыта."""
+    # Ensure 'project_manager' is a field in service_request or derived correctly
+    # project_manager_user = doc.get("project_manager_user_field") # if direct link to user
+    
+    # Or get users with the role
+    recipients = frappe.get_all(
+        "User",
+        filters={"enabled": 1, "user_type": "System User", "roles.role": ROLE_PROEKTNYJ_MENEDZHER},
+        pluck="name",
+        distinct=True,
+    )
+
+    if not recipients:
+        frappe.log_error(f"No recipients found with role {ROLE_PROEKTNYJ_MENEDZHER} for Service Request {doc.name} closure notification.",
+                         title="Notification Error")
+        return
+
+    subject = _("Заявка {0} закрыта").format(doc.name)
+    message = _("Заявка {0} была переведена в статус «Закрыта».").format(doc.name) + \
+              f"\n\n<p><a href='{frappe.utils.get_link_to_form('service_request', doc.name)}'>{_('View Service Request')}</a></p>"
+
+    try:
+        frappe.sendmail(
+            recipients=recipients,
+            subject=subject,
+            message=message,
+            reference_doctype="service_request",
+            reference_name=doc.name
+        )
+    except Exception as e:
+        frappe.log_error(message=str(e), title=f"Failed to send email for SR {doc.name} closure")

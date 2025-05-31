@@ -1,0 +1,177 @@
+# rename_doctypes.py – автоматизированное переименование DocType-ов
+# v2: добавлена массовая замена строковых ссылок ("service_object" → "service_object")
+#   с сохранением CamelCase в объявлениях классов.
+
+#!/usr/bin/env python3
+"""
+rename_doctypes.py – массовое переименование DocType-ов в проекте Frappe / ERPNext.
+
+Изменения версии 2
+==================
+1. **Переименование каталогов** doctype из CamelCase в snake_case.
+2. **Правка JSON**: поле `name` и любые строковые ссылки на DocType.
+3. **Правка JS**: `frappe.ui.form.on('DocType', ...)` и любые строковые ссылки.
+4. **Правка PY/JS/JSON/YAML/MD/HTML**: заменяет *строковые* вхождения "service_object" → "service_object"
+   (и остальные DocType-ы), но **не** трогает объявления `class ServiceObject(Document):`.
+5. Формирует итоговый отчёт: сколько замен выполнено, сколько CamelCase осталось.
+6. Создаёт резервные копии `*.bak` – откат безопасен.
+
+Запуск:
+    python3 rename_doctypes.py --app-path ./apps/ferum_customs [--fix-refs]
+
+Параметр `--fix-refs` включает шаг 4. Без него скрипт только переименовывает каталоги и
+"голову" DocType-а (шаги 1–3) – именно такой режим вы уже запускали.
+"""
+
+import argparse, json, os, re, shutil, sys
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+# Карта CamelCase → snake_case для ключевых DocTypes
+MAPPING: Dict[str, str] = {
+    "service_object": "service_object",
+    "service_report": "service_report",
+    "service_project": "service_project",
+    "payroll_entry_custom": "payroll_entry_custom",
+    "custom_attachment": "custom_attachment",
+}
+
+# Расширения тестовых/кодовых файлов, где ищем строковые ссылки
+TEXT_SUFFIXES = {".py", ".js", ".json", ".yml", ".yaml", ".md", ".html", ".txt"}
+
+###############################################################################
+# Вспомогательные функции
+###############################################################################
+
+def backup(file: Path):
+    """Создаёт .bak-копию один раз перед первым изменением"""
+    if file.exists():
+        bak = file.with_suffix(file.suffix + ".bak")
+        if not bak.exists():
+            shutil.copy2(file, bak)
+
+
+def rename_directory(old_dir: Path, new_dir: Path):
+    if old_dir.exists() and not new_dir.exists():
+        print(f"→ Переименовываю каталог {old_dir.name} → {new_dir.name}")
+        old_dir.rename(new_dir)
+    else:
+        print(f"✓ Каталог {new_dir.name} уже в snake_case или отсутствует")
+
+
+def patch_json(json_path: Path, new_name: str):
+    if not json_path.exists():
+        return 0
+    backup(json_path)
+    text = json_path.read_text("utf-8")
+    patched = re.sub(r'"name"\s*:\s*"[^"]+"', f'"name": "{new_name}"', text)
+    if patched != text:
+        json_path.write_text(patched, "utf-8")
+        print(f"  • Обновил name в {json_path.name}")
+        return 1
+    return 0
+
+
+def patch_js_controller(js_path: Path, new_name: str):
+    if not js_path.exists():
+        return 0
+    backup(js_path)
+    text = js_path.read_text("utf-8")
+    patched = re.sub(r"frappe\\.ui\\.form\\.on\\(['\"]([A-Za-z0-9_]+)['\"]",
+                     f"frappe.ui.form.on('{new_name}'", text)
+    if patched != text:
+        js_path.write_text(patched, "utf-8")
+        print(f"  • Обновил ui.form.on в {js_path.name}")
+        return 1
+    return 0
+
+
+def replace_string_refs(path: Path, pairs: List[Tuple[str, str]]):
+    """Заменить строковые ссылки CamelCase → snake_case вне объявлений классов."""
+    try:
+        text = path.read_text("utf-8")
+    except (UnicodeDecodeError, FileNotFoundError):
+        return 0
+
+    original = text
+    for old, new in pairs:
+        # Меняем только внутри кавычек '...' или "..."
+        pattern = re.compile(rf"(['\"])({old})(['\"])")
+        text = pattern.sub(rf"\1{new}\3", text)
+    if text != original:
+        backup(path)
+        path.write_text(text, "utf-8")
+        return 1
+    return 0
+
+
+def scan_repo(root: Path, patterns: List[str]) -> Dict[str, int]:
+    counts = {p: 0 for p in patterns}
+    for path in root.rglob('*'):
+        if path.suffix not in TEXT_SUFFIXES:
+            continue
+        try:
+            txt = path.read_text("utf-8")
+        except UnicodeDecodeError:
+            continue
+        for pat in patterns:
+            counts[pat] += txt.count(pat)
+    return counts
+
+###############################################################################
+# Основная логика
+###############################################################################
+
+def main():
+    ap = argparse.ArgumentParser(description="Переименование DocType-ов в snake_case")
+    ap.add_argument('--app-path', required=True, help='Путь к каталогу приложения')
+    ap.add_argument('--fix-refs', action='store_true', help='Заменять строковые ссылки во всей кодовой базе')
+    args = ap.parse_args()
+
+    app_root = Path(args.app_path).resolve()
+    print(f"Doctypes root search in: {app_root}\n")
+
+    try:
+        doctype_root = next(app_root.rglob('doctype'))
+    except StopIteration:
+        sys.exit('❌  Каталог doctype не найден')
+
+    # === Шаги 1–3 ============================================================
+    for old, new in MAPPING.items():
+        old_dir = doctype_root / old
+        new_dir = doctype_root / new
+
+        rename_directory(old_dir, new_dir)
+
+        # Файлы внутри каталога
+        json_path = new_dir / f"{new}.json"
+        js_path   = new_dir / f"{new}.js"
+
+        patch_json(json_path, new)
+        patch_js_controller(js_path, new)
+
+    # === Шаг 4: Массовая замена ссылок =======================================
+    total_files_changed = 0
+    if args.fix_refs:
+        print("\n🔄  Замена строковых ссылок по всему проекту…")
+        mapping_pairs = list(MAPPING.items())
+        for path in app_root.rglob('*'):
+            if path.suffix not in TEXT_SUFFIXES:
+                continue
+            total_files_changed += replace_string_refs(path, mapping_pairs)
+        print(f"  • Изменено файлов: {total_files_changed}")
+
+    # === Итоговый отчёт ======================================================
+    print("\nОставшиеся CamelCase-вхождения (после всех правок):")
+    counts = scan_repo(app_root, list(MAPPING.keys()))
+    for pat, cnt in counts.items():
+        print(f"  {pat:20s}: {cnt}")
+
+    if args.fix_refs and total_files_changed:
+        print("\n✅  Завершено. Проверьте изменения, затем запустите `bench migrate && bench build`.\n")
+    else:
+        print("\nℹ️  Добавьте флаг --fix-refs, чтобы автоматически заменить строковые ссылки.")
+
+###############################################################################
+if __name__ == '__main__':
+    main()

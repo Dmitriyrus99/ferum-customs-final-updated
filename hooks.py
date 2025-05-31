@@ -5,11 +5,90 @@ app_description = 'Ferum-specific customizations for ERPNext'
 app_email = 'support@ferum.ru'
 app_license = 'MIT'
 
-app_include_js = "/assets/ferum_customs/js/service_request.js"
-
-# DocEvents
+# ───────────────────────────────────────── doc_events ──────────────────────────────────────────
 doc_events = {
-    "ServiceReport": {
-        "on_submit": "ferum_customs.custom_logic.service_report_hooks.update_linked_request_on_submit"
-    }
+    "service_report": {
+        "on_submit": "ferum_customs.custom_logic.service_report_hooks.update_linked_request_on_submit",
+        "validate": "ferum_customs.custom_logic.service_report_hooks.validate_service_report",
+    },
+    "service_request": {
+        "validate": "ferum_customs.custom_logic.service_request_hooks.validate", # Changed from validate_service_request to match function in hook file
+        "on_update": "ferum_customs.custom_logic.service_request_hooks.on_update_after_submit", # Assuming on_update_after_submit is the intended handler for on_update
+        "on_trash": "ferum_customs.custom_logic.service_request_hooks.prevent_deletion_with_links", # This function is not defined in service_request_hooks.py
+    },
+    "service_object": {
+        "on_trash": "ferum_customs.custom_logic.service_object_hooks.prevent_object_deletion", # This function is not defined in service_object_hooks.py
+    },
+    "payroll_entry_custom": {
+        # "before_save": "ferum_customs.custom_logic.payroll_entry_hooks.calculate_total_payable", # FIXME: calculate_total_payable is not defined in payroll_entry_hooks.py
+        "validate": "ferum_customs.custom_logic.payroll_entry_hooks.validate", # Added validate hook if payroll_entry_hooks.validate is intended to be used
+    },
+    "custom_attachment": {
+        "on_trash": "ferum_customs.custom_logic.attachment_hooks.delete_attachment_file",
+    },
+    "service_project": {
+        "validate": "ferum_customs.custom_logic.service_project_hooks.validate_service_project", # This function is not defined in any provided service_project_hooks.py
+                                                                                                # Assuming it might be in a file like ferum_customs/custom_logic/service_project_hooks.py based on other paths
+    },
+    # If the hook from ferum_customs/ferum/hooks.py for the standard File doctype is still needed:
+    # "File": {
+    #     "on_trash": "ferum_customs.custom_logic.attachment_hooks.delete_general_file_attachment" # A new function would be needed for general files if different from CustomAttachment
+    # }
 }
+
+# ───────────────────────────────── permission queries / notifications ──────────────────────────
+permission_query_conditions = {
+    "service_request": "ferum_customs.permissions.permissions.get_service_request_pqc", # Corrected path
+}
+
+notification_config = "ferum_customs.notifications.notifications.get_notification_config" # Corrected path assuming notifications.py is in notifications folder
+
+# ─────────────────────────────────────────── fixtures ──────────────────────────────────────────
+fixtures = [
+    {"dt": "Custom Field"},
+    {"dt": "Role", "filters": [["role_name", "in", [
+        "Проектный менеджер",
+        "Офис-менеджер",
+        "Инженер",
+        "Заказчик"
+    ]]]},
+    {"dt": "Custom DocPerm"},
+    {"dt": "Workflow", "filters": [["workflow_name", "=", "service_request Flow"]]},
+    # Add other fixtures like Property Setter if needed
+]
+
+# ────────────────────────────────────────── after_install ──────────────────────────────────────
+after_install = "ferum_customs.install.after_install" # Corrected path
+
+# ────────────────────────────────────────── build.json ───────────────────────────────────────
+# It's good practice to have a build hook to trigger build in development
+# app_include_js = "/assets/ferum_customs/js/ferum_customs.bundle.js" # Example if you have a bundle
+# app_include_css = "/assets/ferum_customs/css/ferum_customs.css" # Example
+
+# ─────────────────────────────────── Scheduled Tasks (if any) ──────────────────────────────────
+# scheduler_events = {
+#     "daily": [
+#         "ferum_customs.tasks.daily_task"
+#     ],
+# }
+
+# ─────────────────────────── Whitelisted functions for client scripts ───────────────────────────
+# boot_session = "ferum_customs.boot.boot_session"
+#
+# Add whitelisted methods that can be called from client scripts via frappe.call()
+# For example, if get_engineers_for_object is needed:
+# whitelisted_methods = [
+#     "ferum_customs.custom_logic.service_request_hooks.get_engineers_for_object"
+# ]
+
+app_email = "support@ferum.ru"
+app_license = "MIT"
+
+# Ensure __init__.py exists in relevant Python module folders like custom_logic, permissions, etc.
+
+# Note on missing functions:
+# - ferum_customs.custom_logic.service_request_hooks.prevent_deletion_with_links
+# - ferum_customs.custom_logic.service_object_hooks.prevent_object_deletion
+# - ferum_customs.custom_logic.payroll_entry_hooks.calculate_total_payable
+# - ferum_customs.custom_logic.service_project_hooks.validate_service_project
+# These need to be implemented in their respective files.

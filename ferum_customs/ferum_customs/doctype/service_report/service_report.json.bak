@@ -1,0 +1,101 @@
+// ferum_customs/ferum_customs/doctype/ServiceReport/service_report.json
+{
+    "doctype": "DocType",
+    "name": "ServiceReport",
+    "module": "Ferum Customs",
+    "engine": "InnoDB",
+    "permissions": [
+        {
+            "role": "Проектный менеджер",
+            "read": 1,
+            "write": 1,
+            "create": 1,
+            "delete": 1,
+            "submit": 1,
+            "cancel": 1,
+            "amend": 1
+        },
+        {
+            "role": "Инженер",
+            "read": 1,
+            "write": 1,
+            "create": 1
+        }
+    ],
+    "fields": [
+        {
+            "fieldname": "service_request",
+            "label": "Service Request",
+            "fieldtype": "Link",
+            "options": "service_request",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "customer",
+            "label": "Customer",
+            "fieldtype": "Link",
+            "options": "Customer",
+            "read_only": 1,
+            "no_copy": 1,
+            "description": "Automatically populated from the linked Service Request."
+        },
+        {
+            "fieldname": "posting_date",
+            "label": "Posting Date",
+            "fieldtype": "Date",
+            "default": "Today",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "total_payable",
+            "label": "Total Payable",
+            "fieldtype": "Currency",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "work_items_section",
+            "fieldtype": "Section Break",
+            "label": "Work Items"
+        },
+        {
+            "fieldname": "work_items",
+            "label": "Work Items",
+            "fieldtype": "Table",
+            "options": "ServiceReportWorkItem",
+            "reqd": 1
+        },
+        {
+            "fieldname": "total_quantity",
+            "label": "Total Quantity",
+            "fieldtype": "Float",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "documents_section",
+            "fieldtype": "Section Break",
+            "label": "Attached Documents"
+        },
+        {
+            "fieldname": "attached_documents",
+            "label": "Attached Documents",
+            "fieldtype": "Table",
+            "options": "ServiceReportDocumentItem"
+        },
+        {
+            "fieldname": "status",
+            "label": "Status",
+            "fieldtype": "Select",
+            "options": "Draft\nSubmitted\nCancelled",
+            "default": "Draft",
+            "read_only": 1,
+            "hidden": 1, /* Typically managed by workflow or docstatus */
+            "print_hide": 1
+        }
+    ],
+    "track_changes": 1,
+    "title_field": "service_request"
+}

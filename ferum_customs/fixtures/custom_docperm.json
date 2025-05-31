@@ -1,0 +1,14 @@
+[
+  {
+    "doctype": "DocPerm",
+    "name": "service_request-Право-Проектный_менеджер-0",
+    "parent": "service_request",
+    "parenttype": "DocType",
+    "role": "Проектный менеджер",
+    "permlevel": 0,
+    "read": 1,
+    "write": 1,
+    "create": 1,
+    "delete": 1
+  }
+]

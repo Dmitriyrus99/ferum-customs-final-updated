@@ -1,0 +1,39 @@
+"""Глобальные hooks приложения *ferum_customs*.
+
+Здесь определяются:
+* метаданные приложения (название, описание и т. д.);
+* подключаемые статичные ресурсы;
+* обработчики DocType-событий.
+"""
+
+app_name = "ferum_customs"
+app_title = "Ferum Customizations"
+app_publisher = "Ferum LLC"
+app_description = "Ferum-specific customizations for ERPNext"
+app_email = "support@ferum.ru"
+app_license = "MIT"
+
+# --- Front-end ----------------------------------------------------------------
+# Скрипт, который будет подгружаться во все формы Desk/ERPNext.
+app_include_js = [
+    "/assets/ferum_customs/js/service_request.js",
+]
+
+# --- DocEvents ----------------------------------------------------------------
+# Привязка серверных функций к событиям документов.
+doc_events = {
+    # ServiceReport: обновляем связанную заявку после отправки отчёта
+    "service_report": {
+        "validate": "ferum_customs.custom_logic.service_report_hooks.validate",
+        "on_submit": "ferum_customs.custom_logic.service_report_hooks."
+                     "update_linked_request_on_submit",
+    },
+    # service_request: собственные бизнес-валидации и уведомления
+    "service_request": {
+        "validate": "ferum_customs.custom_logic.service_request_hooks.validate",
+        "on_update_after_submit": (
+            "ferum_customs.custom_logic.service_request_hooks."
+            "on_update_after_submit"
+        ),
+    },
+}

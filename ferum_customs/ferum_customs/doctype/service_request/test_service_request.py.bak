@@ -1,0 +1,204 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2025, Ferum LLC and Contributors
+# See license.txt
+
+import frappe
+from frappe.tests.utils import FrappeTestCase
+from frappe.utils import now_datetime, add_days
+
+# Импорт констант, если они нужны для проверки статусов в тестах
+# from ferum_customs.constants import ROLE_PROEKTNYJ_MENEDZHER, STATUS_OTKRYTA, STATUS_V_RABOTE
+
+# Импорт зависимых DocTypes, если они будут создаваться в тестах
+# from ferum_customs.ferum_customs.doctype.service_object.test_service_object import create_service_object # Пример
+# from ferum_customs.ferum_customs.doctype.service_project.test_service_project import create_service_project # Пример
+
+
+class TestServiceRequest(FrappeTestCase):
+    """
+    Тесты для DocType Service Request (service_request).
+    Включают тесты на создание, обновление, валидацию, Workflow и вызовы API.
+    """
+
+    def setUp(self):
+        """
+        Настройка тестового окружения перед каждым тестом.
+        Создание необходимых связанных документов.
+        """
+        # Очистка документов, созданных в других тестах, если это необходимо
+        # frappe.db.delete("Service Request")
+        # frappe.db.delete("Customer", {"customer_name": "_Test Customer SR"})
+        # frappe.db.delete("User", {"email": "test_sr_engineer@example.com"})
+        # frappe.db.delete("Service Object", {"name": "_Test Service Object SR"})
+        # frappe.db.delete("Service Project", {"name": "_Test Service Project SR"})
+        # frappe.db.commit() # Если используете delete
+
+        self.customer = self._create_customer("_Test Customer SR")
+        self.service_object = self._create_service_object("_Test Service Object SR", self.customer.name)
+        self.project_manager_role = self._create_role_if_not_exists("Проектный менеджер")
+        self.engineer_role = self._create_role_if_not_exists("Инженер")
+
+        self.project_manager_user = self._create_user(
+            "test_sr_pm@example.com",
+            "Test PM User SR",
+            roles=[self.project_manager_role]
+        )
+        self.engineer_user = self._create_user(
+            "test_sr_engineer@example.com",
+            "Test Engineer SR",
+            roles=[self.engineer_role]
+        )
+        self._assign_engineer_to_object(self.service_object.name, self.engineer_user.name)
+
+
+    def tearDown(self):
+        """
+        Очистка после каждого теста.
+        FrappeTestCase обычно откатывает транзакцию, поэтому явное удаление
+        часто не требуется, если вы не делаете frappe.db.commit() внутри тестов.
+        """
+        pass
+
+    # --- Вспомогательные методы для создания тестовых данных ---
+    def _create_customer(self, customer_name: str, customer_group: str = "All Customer Groups"):
+        if frappe.db.exists("Customer", customer_name):
+            return frappe.get_doc("Customer", customer_name)
+        customer = frappe.get_doc({
+            "doctype": "Customer",
+            "customer_name": customer_name,
+            "customer_group": customer_group,
+            "customer_type": "Individual"
+        })
+        customer.insert(ignore_permissions=True)
+        return customer
+
+    def _create_service_object(self, object_name: str, customer: str):
+        if frappe.db.exists("ServiceObject", object_name):
+            return frappe.get_doc("ServiceObject", object_name)
+        so = frappe.get_doc({
+            "doctype": "ServiceObject"
+        })
+        so.insert(ignore_permissions=True)
+        return so
+
+    def _create_user(self, email: str, first_name: str, roles: list = None):
+        if frappe.db.exists("User", email):
+            user = frappe.get_doc("User", email)
+        else:
+            user = frappe.new_doc("User")
+            user.email = email
+            user.first_name = first_name
+            user.send_welcome_email = 0
+            user.insert(ignore_permissions=True)
+
+        if roles:
+            for role_name in roles:
+                if not frappe.db.exists("Has Role", {"parent": user.name, "role": role_name}):
+                    user.add_roles(role_name)
+        return user
+
+    def _create_role_if_not_exists(self, role_name: str):
+        if not frappe.db.exists("Role", role_name):
+            frappe.get_doc({
+                "doctype": "Role",
+                "role_name": role_name
+            }).insert(ignore_permissions=True)
+        return role_name
+
+    def _assign_engineer_to_object(self, service_object_name: str, user_id: str):
+        so_doc = frappe.get_doc("ServiceObject", service_object_name)
+        so_doc.append("assigned_engineers", {
+            "engineer": user_id,
+            "assignment_date": now_datetime().date()
+        })
+        so_doc.save(ignore_permissions=True)
+
+
+    def _create_service_request_doc(self, **kwargs) -> "ServiceRequest":
+        data = {
+            "doctype": "service_request",
+            "subject": "Тестовая заявка на обслуживание",
+            "customer": self.customer.name,
+            "company": "_Test Company",
+            "request_type": "Ремонт",
+            "priority": "Средний",
+            "problem_description": "Тестовое описание проблемы.",
+            "service_object": self.service_object.name
+        }
+        data.update(kwargs)
+        doc = frappe.get_doc(data)
+        return doc
+
+    # --- Тестовые случаи ---
+
+    def test_service_request_creation_and_defaults(self):
+        """Тест создания Service Request и проверки значений по умолчанию."""
+        sr = self._create_service_request_doc()
+        sr.insert(ignore_permissions=True)
+
+        self.assertTrue(sr.name.startswith("SR-"))
+        self.assertEqual(sr.customer, self.customer.name)
+        self.assertIsNotNone(sr.request_datetime)
+        self.assertEqual(sr.workflow_state_display, "Открыта")
+
+        if hasattr(sr, "request_code"):
+            self.assertIsNotNone(sr.request_code)
+
+        if sr.customer and hasattr(sr, "address_display"):
+            pass
+
+
+    def test_service_request_workflow_transition(self):
+        """Тест базового перехода по Workflow."""
+        frappe.set_user(self.project_manager_user.name)
+
+        sr = self._create_service_request_doc()
+        sr.insert()
+        self.assertEqual(sr.workflow_state, "Открыта")
+
+        try:
+            frappe.db.set_value(sr.doctype, sr.name, "status", "Открыта")
+            sr.reload()
+            updated_doc = frappe.call("frappe.workflow.apply_workflow", doc=sr, action="Назначить")
+            sr.reload()
+        except Exception as e:
+            self.fail(f"Workflow transition 'Назначить' failed: {e}")
+
+        self.assertEqual(sr.workflow_state, "В работе")
+
+        frappe.set_user("Administrator")
+
+    def test_get_engineers_for_object_api(self):
+        """Тест вызова whitelisted метода для получения инженеров."""
+        engineers = frappe.call(
+            "ferum_customs.custom_logic.service_request_hooks.get_engineers_for_object",
+            service_object_id=self.service_object.name
+        )
+        self.assertIsInstance(engineers, list)
+        self.assertIn(self.engineer_user.name, engineers)
+
+
+    def test_validation_on_completed_without_report(self):
+        """
+        Тест валидации: нельзя отметить заявку выполненной без отчета.
+        Эта логика находится в custom_logic/service_request_hooks.py в функции validate.
+        Хук validate для ServiceRequest в hooks.py указывает на этот метод.
+        """
+        sr = self._create_service_request_doc()
+        sr.insert(ignore_permissions=True)
+
+        sr.status = "Выполнена"
+
+        import frappe
+        with self.assertRaises(frappe.ValidationError) as context:
+            sr.save(ignore_permissions=True)
+
+        self.assertTrue("Нельзя отметить заявку выполненной без отчёта" in str(context.exception))
+
+        sr.reload()
+        sr.status = "Выполнена"
+        sr.linked_report = "SRPT-DUMMY-001"
+        sr.save(ignore_permissions=True)
+        self.assertEqual(sr.status, "Выполнена")
+        if hasattr(sr, "completed_on"):
+            self.assertIsNotNone(sr.completed_on)

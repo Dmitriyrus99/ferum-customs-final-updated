@@ -1,0 +1,79 @@
+{
+  "doctype": "Workflow",
+  "name": "service_request",
+  "workflow_name": "service_request Flow",
+  "document_type": "service_request",
+  "workflow_state_field": "status",
+  "is_active": 1,
+  "states": [
+    {
+      "state": "Открыта",
+      "doc_status": 1,
+      "allow_edit": "Проектный менеджер"
+    },
+    {
+      "state": "В работе",
+      "doc_status": 0,
+      "allow_edit": "Проектный менеджер"
+    },
+    {
+      "state": "Выполнена",
+      "doc_status": 0,
+      "allow_edit": "Проектный менеджер"
+    },
+    {
+      "state": "Закрыта",
+      "doc_status": 1,
+      "allow_edit": "Проектный менеджер"
+    },
+    {
+      "state": "Отменена",
+      "doc_status": 2,
+      "allow_edit": "Проектный менеджер"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Открыта",
+      "action": "Назначить",
+      "next_state": "В работе",
+      "allowed": "Проектный менеджер"
+    },
+    {
+      "state": "Открыта",
+      "action": "Отменить",
+      "next_state": "Отменена",
+      "allowed": "Проектный менеджер"
+    },
+    {
+      "state": "В работе",
+      "action": "Завершить",
+      "next_state": "Выполнена",
+      "allowed": "Проектный менеджер"
+    },
+    {
+      "state": "Выполнена",
+      "action": "Вернуть в работу",
+      "next_state": "В работе",
+      "allowed": "Проектный менеджер"
+    },
+    {
+      "state": "Выполнена",
+      "action": "Закрыть",
+      "next_state": "Закрыта",
+      "allowed": "Проектный менеджер"
+    },
+    {
+      "state": "Закрыта",
+      "action": "Переоткрыть",
+      "next_state": "Выполнена",
+      "allowed": "Проектный менеджер"
+    },
+    {
+      "state": "Закрыта",
+      "action": "Отменить",
+      "next_state": "Отменена",
+      "allowed": "Проектный менеджер"
+    }
+  ]
+}
