@@ -1,0 +1,49 @@
+name: Run Frappe Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install bench
+        run: pip install frappe-bench
+
+      - name: Create bench and install app
+        run: |
+          bench init --frappe-branch version-15 frappe-bench
+          cd frappe-bench
+          bench get-app --branch main https://github.com/Dmitriyrus99/ferum-customs-final-updated.git
+          bench new-site test-site.local --mariadb-root-password root --admin-password admin
+          bench --site test-site.local install-app ferum_customs
+
+      - name: Run tests
+        run: |
+          cd frappe-bench
+          bench --site test-site.local run-tests --app ferum_customs
