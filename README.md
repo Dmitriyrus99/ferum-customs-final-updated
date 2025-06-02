@@ -1,5 +1,7 @@
 # Ferum Customs (ferum_customs)
 
+![Run Frappe Tests](https://github.com/Dmitriyrus99/ferum-customs-final-updated/actions/workflows/tests.yml/badge.svg)
+
 ## Overview
 
 `ferum_customs` is a Frappe application that extends ERPNext with custom DocTypes and business logic tailored for Ferum's service management and operational processes. It includes features for managing service requests, service objects, service reports, custom payroll entries, and more.
