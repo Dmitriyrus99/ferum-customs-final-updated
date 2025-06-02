@@ -1,0 +1,15 @@
+{
+    "doctype": "DocType",
+    "name": "payroll_entry_custom",
+    "module": "Ferum Customs",
+    "fields": [
+        {
+            "fieldname": "total_payable",
+            "label": "Total Payable",
+            "fieldtype": "Currency",
+            "read_only": 1,
+            "precision": 2,
+            "options": "RUB"
+        }
+    ]
+}

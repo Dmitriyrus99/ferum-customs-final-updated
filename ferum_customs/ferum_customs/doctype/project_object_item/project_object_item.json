@@ -1,0 +1,19 @@
+{
+    "doctype": "DocType",
+    "name": "project_object_item",
+    "module": "Ferum Customs",
+    "istable": 1,
+    "fields": [
+        {
+            "fieldname": "service_object",
+            "label": "Service Object",
+            "fieldtype": "Link",
+            "options": "ServiceObject"
+        },
+        {
+            "fieldname": "description",
+            "label": "Description",
+            "fieldtype": "Small Text"
+        }
+    ]
+}

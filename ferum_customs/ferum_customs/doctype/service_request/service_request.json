@@ -1,0 +1,82 @@
+{
+    "doctype": "DocType",
+    "name": "service_request",
+    "module": "Ferum Customs",
+    "engine": "InnoDB",
+    "issingle": 0,
+    "is_submittable": 1,
+    "show_name_in_global_search": 1,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "track_changes": 1,
+    "track_seen": 1,
+    "track_views": 1,
+    "allow_rename": 1,
+    "naming_series": "SR-.YYYY.-.#####",
+    "title_field": "subject",
+    "workflow_name": "Service Request Workflow",
+    "fields": [
+        {
+            "fieldname": "request_datetime",
+            "label": "Дата и время заявки",
+            "fieldtype": "Datetime",
+            "default": "Now",
+            "read_only": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "completed_on",
+            "label": "Дата выполнения",
+            "fieldtype": "Datetime",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "planned_start_datetime",
+            "label": "План. начало работ",
+            "fieldtype": "Datetime"
+        },
+        {
+            "fieldname": "planned_end_datetime",
+            "label": "План. окончание работ",
+            "fieldtype": "Datetime"
+        },
+        {
+            "fieldname": "actual_start_datetime",
+            "label": "Факт. начало работ",
+            "fieldtype": "Datetime",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "actual_end_datetime",
+            "label": "Факт. окончание работ",
+            "fieldtype": "Datetime",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "duration_hours",
+            "label": "Длительность (часы)",
+            "fieldtype": "Float",
+            "precision": 2,
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "subject",
+            "label": "Тема",
+            "fieldtype": "Data",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "status",
+            "label": "Статус",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "in_list_view": 1,
+            "no_copy": 1
+        }
+    ]
+}

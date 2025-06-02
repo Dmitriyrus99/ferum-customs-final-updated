@@ -1,0 +1,22 @@
+[
+  {
+    "doctype": "Role",
+    "name": "Проектный менеджер",
+    "role_name": "Проектный менеджер"
+  },
+  {
+    "doctype": "Role",
+    "name": "Офис-менеджер",
+    "role_name": "Офис-менеджер"
+  },
+  {
+    "doctype": "Role",
+    "name": "Инженер",
+    "role_name": "Инженер"
+  },
+  {
+    "doctype": "Role",
+    "name": "Заказчик",
+    "role_name": "Заказчик"
+  }
+]

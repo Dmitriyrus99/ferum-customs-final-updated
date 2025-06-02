@@ -1,0 +1,19 @@
+{
+    "doctype": "DocType",
+    "name": "service_report_document_item",
+    "module": "Ferum Customs",
+    "istable": 1,
+    "fields": [
+        {
+            "fieldname": "document_title",
+            "label": "Document Title",
+            "fieldtype": "Data"
+        },
+        {
+            "fieldname": "attachment",
+            "label": "Attachment",
+            "fieldtype": "Attach",
+            "description": "Max file size: 10MB"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "doctype": "DocType",
+    "name": "Service Report Work Item", 
+    "module": "Ferum Customs",
+    "istable": 1,
+    "engine": "InnoDB",
+    "fields": [
+        {
+            "fieldname": "description",
+            "label": "Description",
+            "fieldtype": "Text",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "quantity",
+            "label": "Quantity",
+            "fieldtype": "Float",
+            "precision": "2",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "unit_price",
+            "label": "Unit Price",
+            "fieldtype": "Currency",
+            "precision": "2",
+            "options": "Company:company:default_currency", 
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "amount",
+            "label": "Amount",
+            "fieldtype": "Currency",
+            "precision": "2",
+            "options": "Company:company:default_currency", 
+            "read_only": 1,
+            "in_list_view": 1
+        }
+    ],
+    "permissions": [], 
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "track_changes": 1
+}

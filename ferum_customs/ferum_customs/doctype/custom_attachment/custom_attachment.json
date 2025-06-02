@@ -1,0 +1,37 @@
+{
+    "doctype": "DocType",
+    "name": "custom_attachment",
+    "module": "Ferum Customs",
+    "fields": [
+        {
+            "fieldname": "attachment_type",
+            "label": "Attachment Type",
+            "fieldtype": "Select",
+            "options": "photo\ndocument"
+        },
+        {
+            "fieldname": "parent_reference_sr",
+            "label": "Parent Service Request",
+            "fieldtype": "Link",
+            "options": "ServiceRequest"
+        },
+        {
+            "fieldname": "parent_reference_srep",
+            "label": "Parent Service Report",
+            "fieldtype": "Link",
+            "options": "ServiceReport"
+        },
+        {
+            "fieldname": "parent_reference_so",
+            "label": "Parent Service Object",
+            "fieldtype": "Link",
+            "options": "ServiceObject"
+        },
+        {
+            "fieldname": "attachment_file",
+            "label": "Attachment File",
+            "fieldtype": "Attach",
+            "description": "Max file size: 10MB"
+        }
+    ]
+}

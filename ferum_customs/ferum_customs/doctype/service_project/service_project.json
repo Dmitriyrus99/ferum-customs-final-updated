@@ -1,0 +1,73 @@
+{
+    "doctype": "DocType",
+    "name": "service_project",
+    "module": "Ferum Customs",
+    "engine": "InnoDB",
+    "fields": [
+        {
+            "fieldname": "project_name",
+            "label": "Название проекта",
+            "fieldtype": "Data",
+            "reqd": 1,
+            "in_list_view": 1,
+            "unique": 1
+        },
+        {
+            "fieldname": "customer",
+            "label": "Клиент",
+            "fieldtype": "Link",
+            "options": "Customer",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "status",
+            "label": "Статус",
+            "fieldtype": "Select",
+            "options": "Open\nIn Progress\nCompleted\nCancelled",
+            "default": "Open",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "start_date",
+            "label": "Дата начала",
+            "fieldtype": "Date" 
+        },
+        {
+            "fieldname": "end_date",
+            "label": "Дата окончания",
+            "fieldtype": "Date"
+        },
+        {
+            "fieldname": "description",
+            "label": "Описание",
+            "fieldtype": "Text"
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "project_object_items_section",
+            "fieldtype": "Section Break",
+            "label": "Объекты обслуживания в проекте"
+        },
+        {
+            "fieldname": "project_object_items",
+            "label": "Project Object Items",
+            "fieldtype": "Table",
+            "options": "ProjectObjectItem"
+        }
+    ],
+    "permissions": [
+        {
+            "role": "Проектный менеджер",
+            "read": 1, "write": 1, "create": 1, "delete": 1
+        },
+        {
+            "role": "Инженер",
+            "read": 1
+        }
+    ],
+    "track_changes": 1,
+    "title_field": "project_name"
+}

@@ -1,0 +1,5 @@
+{
+  "ferum_customs.bundle.js": [
+    "js/ferum_customs/service_request.js"
+  ]
+}

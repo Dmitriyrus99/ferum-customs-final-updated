@@ -1,0 +1,19 @@
+{
+    "doctype": "DocType",
+    "name": "assigned_engineer_item",
+    "module": "Ferum Customs",
+    "istable": 1,
+    "fields": [
+        {
+            "fieldname": "engineer",
+            "label": "Engineer",
+            "fieldtype": "Link",
+            "options": "User"
+        },
+        {
+            "fieldname": "assignment_date",
+            "label": "Assignment Date",
+            "fieldtype": "Datetime"
+        }
+    ]
+}
