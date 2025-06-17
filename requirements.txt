@@ -4,7 +4,7 @@
 # within a Frappe/ERPNext environment but are recommended for development.
 
 # --- Linters and Formatters ---
-black == 23.3.0
+black == 24.3.0
 ruff == 0.0.270
 # flake8  # Раскомментируйте, если все еще используете Flake8 наряду с Ruff
 pre-commit # Раскомментируйте, если используете pre-commit хуки для автоматизации проверок
